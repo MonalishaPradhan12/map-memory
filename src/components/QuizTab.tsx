@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
 import IndiaMap, { type IndiaGeo } from "./IndiaMap";
 import { REGIONS, colorFor } from "@/lib/states";
+import { streakMessage } from "@/lib/feedback";
 
 const TOTAL = 10; // questions per round
 const STATES = REGIONS.filter((r) => r.type === "State").map((r) => r.name);
@@ -13,7 +16,6 @@ function shuffle<T>(items: T[]): T[] {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-// 10 random states, each with 3 wrong choices + the right one, in random order.
 function makeQuiz(): Question[] {
   return shuffle(STATES)
     .slice(0, TOTAL)
@@ -25,19 +27,20 @@ function makeQuiz(): Question[] {
 
 export default function QuizTab({ geo }: { geo: IndiaGeo }) {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [index, setIndex] = useState(0); // current question (TOTAL = finished)
+  const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<string | null>(null);
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
+  const [streak, setStreak] = useState(0); // correct answers in a row
 
   const start = useCallback(() => {
     setQuestions(makeQuiz());
     setIndex(0);
     setChosen(null);
     setScore(0);
+    setStreak(0);
   }, []);
 
-  // Make the quiz after the page loads, and read the saved best score.
   useEffect(() => {
     start();
     try {
@@ -46,20 +49,36 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
       /* storage not available: ignore */
     }
   }, [start]);
-
+ 
   function choose(option: string) {
-    if (chosen) return; // already answered
+    if (chosen) return;
     setChosen(option);
-    if (option === questions[index].answer) setScore((s) => s + 1);
+
+    if (option === questions[index].answer) {
+      setScore((s) => s + 1);
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      if (newStreak >= 2) {
+        const m = streakMessage(newStreak);
+        toast.success(m.title, { description: m.text, duration: 2500 });
+      }
+    } else {
+      setStreak(0); // a wrong answer breaks the streak
+    }
   }
 
   function next() {
-    if (index + 1 === TOTAL && score > best) {
-      setBest(score);
-      try {
-        localStorage.setItem("quizBest", String(score));
-      } catch {
-        /* ignore */
+    if (index + 1 === TOTAL) {
+      if (score > best) {
+        setBest(score);
+        try {
+          localStorage.setItem("quizBest", String(score));
+        } catch {
+          /* ignore */
+        }
+      }
+      if (score >= 8) {
+        confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
       }
     }
     setIndex((i) => i + 1);
@@ -68,7 +87,6 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
 
   if (questions.length === 0) return null;
 
-  // Finished screen
   if (index >= TOTAL) {
     return (
       <div className="card quiz">
@@ -76,7 +94,9 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
         <p className="result">
           {score} / {TOTAL}
         </p>
-        <p className="hint">Best score: {best} / {TOTAL}</p>
+        <p className="hint">
+          Best score: {best} / {TOTAL}
+        </p>
         <button className="btn" onClick={start}>
           Play again
         </button>

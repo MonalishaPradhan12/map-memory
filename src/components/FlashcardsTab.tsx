@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { IndiaGeo } from "./IndiaMap";
 import StateShape from "./StateShape";
 import { REGIONS, colorFor, findRegion } from "@/lib/states";
-
+import { motion } from "framer-motion";
 const ALL = REGIONS.map((r) => r.name);
 
 export default function FlashcardsTab({ geo }: { geo: IndiaGeo }) {
@@ -52,7 +52,14 @@ export default function FlashcardsTab({ geo }: { geo: IndiaGeo }) {
         Card {index + 1} of {deck.length}
       </p>
 
-      <div className="flash" onClick={() => setFlipped((f) => !f)}>
+      <motion.div
+        key={`${index}-${flipped}`}
+        className="flash"
+        initial={{ opacity: 0, rotateY: 90 }}
+        animate={{ opacity: 1, rotateY: 0 }}
+        transition={{ duration: 0.25 }}
+        onClick={() => setFlipped((f) => !f)}
+      >
         {flipped ? (
           <>
             <StateShape feature={feature} fill={colorFor(name)} />
@@ -84,7 +91,7 @@ export default function FlashcardsTab({ geo }: { geo: IndiaGeo }) {
             <div className="cap">Tap the card to flip.</div>
           </>
         )}
-      </div>
+      </motion.div>
 
       <div className="feedback">
         <button className="btn" onClick={() => go(-1)}>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import IndiaMap, { type IndiaGeo } from "./IndiaMap";
 import { REGIONS, colorFor } from "@/lib/states";
+import { feedback } from "@/lib/feedback"; // NEW
 
 export default function PlaceTab({ geo }: { geo: IndiaGeo }) {
   const [withUTs, setWithUTs] = useState(false);
@@ -11,6 +12,7 @@ export default function PlaceTab({ geo }: { geo: IndiaGeo }) {
   const [mistakes, setMistakes] = useState(0);
   const [picked, setPicked] = useState<string | null>(null); // tap-to-place (phones)
   const [flash, setFlash] = useState<string | null>(null); // region that flashes red
+  const [streak, setStreak] = useState(0); // NEW: correct placements in a row
 
   // The names you must place: 28 states, or 36 with union territories.
   const pool = useMemo(
@@ -23,6 +25,7 @@ export default function PlaceTab({ geo }: { geo: IndiaGeo }) {
     setPlaced([]);
     setMistakes(0);
     setPicked(null);
+    setStreak(0); // NEW
   }, [pool]);
 
   // Shuffle after the page loads (random order can't be made on the server).
@@ -32,13 +35,22 @@ export default function PlaceTab({ geo }: { geo: IndiaGeo }) {
 
   function attempt(regionName: string, name: string) {
     if (!name || !pool.includes(regionName) || placed.includes(regionName)) return;
+
     if (regionName === name) {
+      const newStreak = streak + 1; // NEW
       setPlaced((p) => [...p, name]);
       setPicked(null);
+      setStreak(newStreak); // NEW
+
+      // NEW: last one gets the "finished" toast, others get the normal one
+      if (placed.length + 1 === pool.length) feedback.finished(mistakes);
+      else feedback.correct(name, newStreak);
     } else {
       setMistakes((m) => m + 1);
       setFlash(regionName);
       setTimeout(() => setFlash(null), 600);
+      feedback.wrong(streak >= 2); // NEW
+      setStreak(0); // NEW
     }
   }
 
