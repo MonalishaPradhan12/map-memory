@@ -6,8 +6,9 @@ import confetti from "canvas-confetti";
 import IndiaMap, { type IndiaGeo } from "./IndiaMap";
 import { REGIONS, colorFor } from "@/lib/states";
 import { streakMessage } from "@/lib/feedback";
+import { recordMistake } from "@/lib/progress";
 
-const TOTAL = 10; // questions per round
+const TOTAL = 10;
 const STATES = REGIONS.filter((r) => r.type === "State").map((r) => r.name);
 
 type Question = { answer: string; options: string[] };
@@ -31,7 +32,7 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
   const [chosen, setChosen] = useState<string | null>(null);
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
-  const [streak, setStreak] = useState(0); // correct answers in a row
+  const [streak, setStreak] = useState(0);
 
   const start = useCallback(() => {
     setQuestions(makeQuiz());
@@ -46,10 +47,10 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
     try {
       setBest(Number(localStorage.getItem("quizBest") ?? 0));
     } catch {
-      /* storage not available: ignore */
+      /* storage not available */
     }
   }, [start]);
- 
+
   function choose(option: string) {
     if (chosen) return;
     setChosen(option);
@@ -63,7 +64,8 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
         toast.success(m.title, { description: m.text, duration: 2500 });
       }
     } else {
-      setStreak(0); // a wrong answer breaks the streak
+      setStreak(0);
+      recordMistake("map", questions[index].answer);
     }
   }
 
@@ -87,19 +89,25 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
 
   if (questions.length === 0) return null;
 
+  /* Result screen */
   if (index >= TOTAL) {
     return (
-      <div className="card quiz">
-        <h2>Quiz complete</h2>
-        <p className="result">
+      <div className="mx-auto max-w-xl rounded-2xl border border-border bg-card p-5">
+        <h2 className="mb-2 text-lg font-bold text-tx">Quiz complete</h2>
+        <p className="text-center text-4xl font-extrabold text-tx">
           {score} / {TOTAL}
         </p>
-        <p className="hint">
+        <p className="mt-1 text-center text-sm text-muted">
           Best score: {best} / {TOTAL}
         </p>
-        <button className="btn" onClick={start}>
-          Play again
-        </button>
+        <div className="mt-4 text-center">
+          <button
+            className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-tx transition hover:border-primary"
+            onClick={start}
+          >
+            Play again
+          </button>
+        </div>
       </div>
     );
   }
@@ -107,29 +115,45 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
   const q = questions[index];
 
   return (
-    <div className="card quiz">
-      <div className="progress">
-        <span style={{ width: `${(index / TOTAL) * 100}%` }} />
+    <div className="mx-auto max-w-xl rounded-2xl border border-border bg-card p-5">
+      {/* Progress bar */}
+      <div className="h-1.5 overflow-hidden rounded-full bg-border">
+        <span
+          className="block h-full bg-primary transition-[width] duration-300"
+          style={{ width: `${(index / TOTAL) * 100}%` }}
+        />
       </div>
-      <p className="stat">
+      <p className="mt-2 text-center text-sm text-muted">
         Question {index + 1} of {TOTAL} · Score {score}
       </p>
 
+      {/* Map highlighting the target state */}
       <IndiaMap
         data={geo}
         outline
-        fillFor={(name) => (name === q.answer ? colorFor(name) : "var(--bd)")}
+        fillFor={(name) =>
+          name === q.answer ? colorFor(name) : "var(--color-border)"
+        }
         labeled={chosen ? [q.answer] : []}
       />
 
-      <h2 className="ask">Which state is this?</h2>
+      <h2 className="my-3 text-center text-lg font-semibold text-tx">
+        Which state is this?
+      </h2>
 
-      <div className="answers">
+      {/* Options */}
+      <div className="grid grid-cols-2 gap-2.5">
         {q.options.map((opt) => {
-          let cls = "ans";
+          let cls =
+            "min-h-[48px] rounded-xl border px-3 py-2.5 text-sm font-medium transition cursor-pointer ";
           if (chosen) {
-            if (opt === q.answer) cls += " right";
-            else if (opt === chosen) cls += " wrong";
+            if (opt === q.answer)
+              cls += "border-ok bg-ok-bg text-ok-tx";
+            else if (opt === chosen)
+              cls += "border-bad bg-bad-bg text-bad-tx animate-shake";
+            else cls += "border-border bg-card text-tx opacity-60";
+          } else {
+            cls += "border-border bg-card text-tx hover:border-primary";
           }
           return (
             <button key={opt} className={cls} onClick={() => choose(opt)}>
@@ -139,10 +163,24 @@ export default function QuizTab({ geo }: { geo: IndiaGeo }) {
         })}
       </div>
 
+      {/* Feedback */}
       {chosen && (
-        <div className="feedback">
-          <span>{chosen === q.answer ? "Correct!" : `Not quite. It's ${q.answer}.`}</span>
-          <button className="btn" onClick={next}>
+        <div
+          className={`mt-4 flex items-center justify-between rounded-xl px-3 py-2.5 font-semibold ${
+            chosen === q.answer
+              ? "bg-ok-bg text-ok-tx"
+              : "bg-bad-bg text-bad-tx"
+          }`}
+        >
+          <span>
+            {chosen === q.answer
+              ? "Correct!"
+              : `Not quite. It's ${q.answer}.`}
+          </span>
+          <button
+            className="rounded-lg bg-primary px-4 py-1.5 text-sm font-bold text-on-primary transition hover:bg-primary-dark"
+            onClick={next}
+          >
             {index + 1 === TOTAL ? "See result" : "Next"}
           </button>
         </div>

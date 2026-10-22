@@ -5,6 +5,7 @@ import { REGIONS, type Region } from "@/lib/states";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { streakMessage } from "@/lib/feedback";
+import { recordMistake } from "@/lib/progress";
 
 const TOTAL = 10;
 const LETTERS = ["A", "B", "C", "D"];
@@ -12,7 +13,7 @@ const LETTERS = ["A", "B", "C", "D"];
 const POOL = REGIONS.filter((r) => r.type === "State" && r.capital !== "Chandigarh");
 
 type Mode = "toState" | "toCapital";
-type Question = { prompt: string; answer: string; options: string[] };
+type Question = { region: string; prompt: string; answer: string; options: string[] };
 
 function shuffle<T>(items: T[]): T[] {
   return [...items].sort(() => Math.random() - 0.5);
@@ -28,6 +29,7 @@ function makeQuiz(mode: Mode): Question[] {
         .slice(0, 3)
         .map(value);
       return {
+        region: r.name,
         prompt:
           mode === "toState"
             ? `${r.capital} is the capital of which state?`
@@ -59,7 +61,7 @@ export default function CapitalsTab() {
     setIndex(0);
     setChosen(null);
     setScore(0);
-    setStreak(0); // fix: a new round starts with no streak
+    setStreak(0); // a new round starts with no streak
   }, [mode]);
 
   // New quiz on load, and again whenever the mode changes.
@@ -89,6 +91,7 @@ export default function CapitalsTab() {
       }
     } else {
       setStreak(0); // a wrong answer breaks the streak
+      recordMistake("capital", questions[index].region);
     }
   }
 
@@ -110,12 +113,35 @@ export default function CapitalsTab() {
     setChosen(null);
   }
 
+  const segBase =
+    "flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition cursor-pointer";
+
   const modePills = (
-    <div className="seg" role="group" aria-label="Quiz direction">
-      <button className={mode === "toState" ? "on" : ""} aria-pressed={mode === "toState"} onClick={() => setMode("toState")}>
+    <div
+      className="mb-4 flex gap-1 rounded-xl border border-border bg-surface p-1"
+      role="group"
+      aria-label="Quiz direction"
+    >
+      <button
+        className={`${segBase} ${
+          mode === "toState"
+            ? "bg-primary text-on-primary shadow-sm"
+            : "text-muted hover:text-tx"
+        }`}
+        aria-pressed={mode === "toState"}
+        onClick={() => setMode("toState")}
+      >
         Capital → State
       </button>
-      <button className={mode === "toCapital" ? "on" : ""} aria-pressed={mode === "toCapital"} onClick={() => setMode("toCapital")}>
+      <button
+        className={`${segBase} ${
+          mode === "toCapital"
+            ? "bg-primary text-on-primary shadow-sm"
+            : "text-muted hover:text-tx"
+        }`}
+        aria-pressed={mode === "toCapital"}
+        onClick={() => setMode("toCapital")}
+      >
         State → Capital
       </button>
     </div>
@@ -123,22 +149,27 @@ export default function CapitalsTab() {
 
   if (questions.length === 0) return null;
 
-  // Result screen
+  /* Result screen */
   if (index >= TOTAL) {
     const r = resultMessage(score);
     return (
-      <div className="card quiz">
+      <div className="mx-auto max-w-xl rounded-2xl border border-border bg-card p-5">
         {modePills}
-        <div className="finish">
-          <div className="big-emoji">{r.emoji}</div>
-          <p className="result">
+        <div className="py-4 text-center">
+          <div className="text-6xl" aria-hidden="true">
+            {r.emoji}
+          </div>
+          <p className="mt-2 text-4xl font-extrabold text-tx">
             {score} / {TOTAL}
           </p>
-          <p className="finish-text">{r.text}</p>
-          <p className="hint">
+          <p className="mt-1 font-semibold text-tx">{r.text}</p>
+          <p className="mt-1 text-sm text-muted">
             Best score: {best} / {TOTAL}
           </p>
-          <button className="btn primary" onClick={start}>
+          <button
+            className="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-on-primary transition hover:bg-primary-dark"
+            onClick={start}
+          >
             Play again
           </button>
         </div>
@@ -150,46 +181,89 @@ export default function CapitalsTab() {
   const correct = chosen === q.answer;
 
   return (
-    <div className="card quiz">
+    <div className="mx-auto max-w-xl rounded-2xl border border-border bg-card p-5">
       {modePills}
 
-      <div className="topbar">
-        <div className="progress grow">
-          <span style={{ width: `${(index / TOTAL) * 100}%` }} />
+      {/* Progress + streak */}
+      <div className="flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
+          <span
+            className="block h-full bg-primary transition-[width] duration-300"
+            style={{ width: `${(index / TOTAL) * 100}%` }}
+          />
         </div>
-        <span className={streak >= 2 ? "streak-chip hot" : "streak-chip"}>🔥 {streak}</span>
+        <span
+          className={`rounded-full border px-2.5 py-0.5 text-sm font-bold transition ${
+            streak >= 2
+              ? "border-primary bg-primary/15 text-primary"
+              : "border-border bg-surface text-muted"
+          }`}
+        >
+          🔥 {streak}
+        </span>
       </div>
-      <p className="stat">
+      <p className="mt-2 text-center text-sm text-muted">
         Question {index + 1} of {TOTAL} · Score {score}
       </p>
 
-      <div className="qcard" key={index}>
-        <span className="qlabel">{mode === "toState" ? "Find the state" : "Find the capital"}</span>
-        <h2 className="qtext">{q.prompt}</h2>
+      {/* Question */}
+      <div
+        key={index}
+        className="my-4 animate-rise rounded-2xl border border-border bg-surface px-4 py-6 text-center"
+      >
+        <span className="text-xs font-bold uppercase tracking-[0.15em] text-primary">
+          {mode === "toState" ? "Find the state" : "Find the capital"}
+        </span>
+        <h2 className="mt-2 text-xl font-bold text-tx">{q.prompt}</h2>
       </div>
 
-      <div className="opts">
+      {/* Options */}
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {q.options.map((opt, i) => {
-          let cls = "opt";
+          let cls =
+            "flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition ";
+          let keyCls =
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold ";
           if (chosen) {
-            if (opt === q.answer) cls += " right";
-            else if (opt === chosen) cls += " wrong";
+            if (opt === q.answer) {
+              cls += "border-ok bg-ok-bg text-ok-tx";
+              keyCls += "bg-ok text-white";
+            } else if (opt === chosen) {
+              cls += "border-bad bg-bad-bg text-bad-tx animate-shake";
+              keyCls += "bg-bad text-white";
+            } else {
+              cls += "border-border bg-card text-tx opacity-60";
+              keyCls += "bg-surface text-muted";
+            }
+          } else {
+            cls += "border-border bg-card text-tx hover:border-primary";
+            keyCls += "bg-surface text-muted";
           }
           return (
             <button key={opt} className={cls} onClick={() => choose(opt)}>
-              <span className="key">{LETTERS[i]}</span>
-              <span className="opt-text">{opt}</span>
-              {chosen && opt === q.answer && <span className="mark">✓</span>}
-              {chosen && opt === chosen && opt !== q.answer && <span className="mark">✗</span>}
+              <span className={keyCls}>{LETTERS[i]}</span>
+              <span className="flex-1">{opt}</span>
+              {chosen && opt === q.answer && <span aria-hidden="true">✓</span>}
+              {chosen && opt === chosen && opt !== q.answer && (
+                <span aria-hidden="true">✗</span>
+              )}
             </button>
           );
         })}
       </div>
 
+      {/* Feedback */}
       {chosen && (
-        <div className={correct ? "fb ok" : "fb bad"}>
+        <div
+          className={`mt-4 flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 font-semibold ${
+            correct ? "bg-ok-bg text-ok-tx" : "bg-bad-bg text-bad-tx"
+          }`}
+        >
           <span>{correct ? "Correct! 🎉" : `Not quite. It's ${q.answer}.`}</span>
-          <button className="btn primary" onClick={next}>
+          <button
+            className="rounded-lg bg-primary px-4 py-1.5 text-sm font-bold text-on-primary transition hover:bg-primary-dark"
+            onClick={next}
+          >
             {index + 1 === TOTAL ? "See result" : "Next"}
           </button>
         </div>
