@@ -11,10 +11,12 @@ import ThemeToggle from "@/components/ThemeToggle";
 import WeakSpotsTab from "@/components/WeakSpotsTab";
 import { getSavedName, saveName, useWeak } from "@/lib/progress";
 import rawGeo from "@/data/india-states.json";
+import WorldMap from "@/components/WorldMap";
+import { worldGeo } from "@/data/world";
 
 const geo = rawGeo as unknown as IndiaGeo;
 
-type Tab = "learn" | "place" | "quiz" | "capitals" | "flash" | "weak";
+type Tab = "learn" | "place" | "quiz" | "capitals" | "flash" | "weak" | "world";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "learn", label: "Learn", icon: "🎨" },
@@ -23,6 +25,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "capitals", label: "Capitals", icon: "🏛️" },
   { id: "flash", label: "Flashcards", icon: "📚" },
   { id: "weak", label: "Weak Spots", icon: "🎯" },
+  { id: "world", label: "World Map", icon: "🎯" },
 ];
 
 export default function Home() {
@@ -71,12 +74,12 @@ export default function Home() {
           </p>
 
           <h1 className="text-3xl font-extrabold tracking-tight text-tx sm:text-4xl">
-            India Map Memory
+             Map Memory
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-muted sm:text-base">
-            Explore Indian states, learn their locations, and discover
-            their capitals through fun activities.
+            Explore Indian states, learn their locations, and discover their
+            capitals through fun activities.
           </p>
 
           <form onSubmit={handleStart} className="mt-8 space-y-4 text-left">
@@ -112,7 +115,7 @@ export default function Home() {
           </form>
 
           <p className="mt-6 text-xs text-muted">
-            Learn India. One color at a time.
+            Learn Map. One color at a time.
           </p>
         </div>
       </main>
@@ -126,26 +129,28 @@ export default function Home() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-tx md:text-3xl">
-            India Map Memory
+             Map Memory
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Welcome, <span className="font-semibold text-primary">{userName}</span>! Ready to explore India?
+            Welcome,{" "}
+            <span className="font-semibold text-primary">{userName}</span>!
+            Ready to explore?
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-        <ThemeToggle />
-        <button
-          type="button"
-          onClick={() => {
-            setName(userName); // prefill with the current name
-            setTab("learn");
-            setStarted(false);
-          }}
-          className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-tx transition hover:border-primary hover:text-primary"
-        >
-          Change Name
-        </button>
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => {
+              setName(userName); // prefill with the current name
+              setTab("learn");
+              setStarted(false);
+            }}
+            className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-tx transition hover:border-primary hover:text-primary"
+          >
+            Change Name
+          </button>
         </div>
       </div>
 
@@ -188,14 +193,15 @@ export default function Home() {
         {tab === "capitals" && <CapitalsTab />}
         {tab === "flash" && <FlashcardsTab geo={geo} />}
         {tab === "weak" && <WeakSpotsTab geo={geo} />}
+        {tab === "world" && <WorldMap data={worldGeo} />}
       </div>
 
       {/* Footer */}
       <footer className="mt-8 border-t border-border pt-5 pb-2 text-center text-sm text-muted">
         <div className="mb-1 inline-block border-b-2 border-primary font-bold text-tx">
-          India Map Memory
+           Map Memory
         </div>
-        <p>Learn India. One color at a time.</p>
+        <p>Learn Map. One color at a time.</p>
         <p className="mt-1 text-xs opacity-80">
           Map is for learning only. Boundaries are approximate.
         </p>

@@ -35,8 +35,8 @@ export default function NameGate({
           🗺️
         </motion.div>
 
-        <h1 className="text-2xl font-bold text-tx">India Map Memory</h1>
-        <p className="mt-1 text-muted">Learn India. One color at a time.</p>
+        <h1 className="text-2xl font-bold text-tx"> Map Memory</h1>
+        <p className="mt-1 text-muted">Learn Map. One color at a time.</p>
 
         <label htmlFor="player-name" className="mb-2 mt-5 block font-semibold">
           What should we call you?

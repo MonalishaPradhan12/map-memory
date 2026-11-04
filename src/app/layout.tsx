@@ -3,13 +3,14 @@ import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import TitleBlink from "@/components/TitleBlink";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "India Map Memory",
+  title: "World Map Memory",
   description:
-    "Learn the states and union territories of India, one color at a time.",
+    "Learn the countries and capitals of the world, one color at a time.",
 };
 
 export const viewport: Viewport = {
@@ -24,7 +25,11 @@ export const viewport: Viewport = {
 // Runs before first paint so the saved (or system) theme shows with no flash.
 const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark')}catch(e){}})()`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <head>
@@ -32,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
+        <TitleBlink />
         <Analytics />
         <Toaster position="top-center" />
       </body>
