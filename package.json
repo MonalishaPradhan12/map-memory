@@ -16,7 +16,7 @@
     "d3-geo": "^3.1.1",
     "framer-motion": "^14.4.0",
     "leaflet": "^1.9.4",
-    "next": "16.4.2",
+    "next": "16.4.6",
     "postcss": "^8.5.31",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -37,7 +37,7 @@
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
     "eslint": "^9",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.6",
     "tailwindcss": "^4.3.3",
     "typescript": "^5"
   }
