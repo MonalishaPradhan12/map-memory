@@ -9,6 +9,7 @@ import FlashcardsTab from "@/components/FlashcardsTab";
 import CapitalsTab from "@/components/CapitalsTab";
 import ThemeToggle from "@/components/ThemeToggle";
 import WeakSpotsTab from "@/components/WeakSpotsTab";
+import AdBanner from "@/components/AdBanner";
 import { getSavedName, saveName, useWeak } from "@/lib/progress";
 import rawGeo from "@/data/india-states.json";
 
@@ -149,6 +150,9 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── Ad: Top banner (below header, above tabs) ── */}
+      <AdBanner adSlot="YOUR_AD_SLOT_1" adFormat="horizontal" className="mb-4" />
+
       {/* Tabs */}
       <div
         className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none"
@@ -189,6 +193,9 @@ export default function Home() {
         {tab === "flash" && <FlashcardsTab geo={geo} />}
         {tab === "weak" && <WeakSpotsTab geo={geo} />}
       </div>
+
+      {/* ── Ad: Bottom banner (between content and footer) ── */}
+      <AdBanner adSlot="YOUR_AD_SLOT_2" adFormat="auto" className="mt-6" />
 
       {/* Footer */}
       <footer className="mt-8 border-t border-border pt-5 pb-2 text-center text-sm text-muted">
