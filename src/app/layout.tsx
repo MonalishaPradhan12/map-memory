@@ -1,3 +1,4 @@
+
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
@@ -6,8 +7,13 @@ import { Analytics } from "@vercel/analytics/next";
 import TitleBlink from "@/components/TitleBlink";
 import Script from "next/script";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
+const adsenseId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+console.log("adsese",adsenseId)
 export const metadata: Metadata = {
   title: "World Map Memory",
   description:
@@ -23,9 +29,20 @@ export const viewport: Viewport = {
   ],
 };
 
-// Runs before first paint so the saved (or system) theme shows with no flash.
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark')}catch(e){}})()`;
-const adsenseId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+const themeScript = `
+(function() {
+  try {
+    var theme = localStorage.getItem("theme");
+    var isDark = theme
+      ? theme === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    }
+  } catch (error) {}
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -33,19 +50,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={inter.className}
+      suppressHydrationWarning
+    >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Initialize theme before hydration */}
+        <Script
+          id="theme-initialization"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
 
+        {/* Google AdSense */}
         {adsenseId && (
           <Script
+            id="google-adsense"
             async
+            strategy="afterInteractive"
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
             crossOrigin="anonymous"
-            strategy="afterInteractive"
           />
         )}
       </head>
+
       <body>
         {children}
         <TitleBlink />
